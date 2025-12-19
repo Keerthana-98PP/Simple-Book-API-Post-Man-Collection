@@ -1,0 +1,791 @@
+{
+	"info": {
+		"_postman_id": "602123d1-dd2c-4990-a021-d3750aa879a5",
+		"name": "Simple Book API",
+		"description": "## Simple Book API\n\nThe **Simple Book API** provides a minimal, developer-friendly interface to work with books and related orders. It’s ideal for learning API testing, building demos, and practicing workflows in Postman.\n\n### Purpose\n\n- Browse and query available books\n    \n- Place and manage orders for books\n    \n- (Optional) Explore related resources such as authors, if exposed by the API version you are using\n    \n\n### Main Resources & Endpoints\n\n- **Books**\n    \n    - List all books\n        \n    - Filter books by `bookType` (for example: `fiction`, `non-fiction`, etc.)\n        \n    - Retrieve a single book by its identifier\n        \n- **Orders**\n    \n    - Submit a new order for one or more books\n        \n    - Get all orders for the current user/context\n        \n    - Get a single order by its identifier\n        \n    - Update an existing order (for example, status or details)\n        \n\n(If your API exposes **Authors** or other related resources, group their endpoints in this collection under dedicated folders.)\n\n### Base URL\n\nAll requests in this collection are designed to use the active environment’s base URL.\n\n``` text\nBase URL: {{url}}\nExample: {{url}}/books\n\n ```\n\nMake sure you select the **Test** environment (or another environment that defines `url`) before running requests.\n\n### Authentication\n\nThe Simple Book API commonly uses token-based authentication ( a bearer token) for protected operations such as creating or managing orders.\n\n- Public/unauthenticated operations typically include: fetching book lists and details.\n    \n- Authenticated operations typically include: creating, viewing, updating and Deleting orders.\n    \n\nCheck the **authorization** settings and any login/auth requests in this workspace to obtain and set the required token before calling protected endpoints.\n\n### Usage Notes\n\n- **Filtering by** **`bookType`**\n    \n    - Use a query parameter such as:\n        \n        ``` http\n              GET {{url}}/books?bookType=fiction\n        \n         ```\n        \n    - Adjust `bookType` according to the values supported by the API.\n        \n- **Pagination (if supported)**\n    \n    - This API may return a limited number of items per page.\n        \n    - Look for query parameters such as `page`, `limit`, or similar:\n        \n        ``` http\n              GET {{url}}/books?page=1&limit=20\n        \n         ```\n        \n    - Inspect responses for pagination metadata (for example, `total`, `nextPage`, or similar) and use that to iterate through result sets.\n        \n- **Error handling**\n    \n    - 4xx responses generally indicate invalid input, authentication issues, or missing resources.\n        \n    - 5xx responses indicate server-side issues; consider retrying or reporting if consistently reproducible.\n        \n\n### Rate Limits\n\nThis collection assumes the backing API may enforce rate limits.\n\n- **Rate limit placeholder:** Consult the upstream API documentation for the actual limits (for example, _N_ requests per minute/hour).\n    \n- If you frequently see `429 Too Many Requests`, slow down requests or add delays between runs (for example, in a Collection Runner or monitor configuration).\n    \n\n### Run in Postman\n\nUse the **Run in Postman** button to quickly import and execute this collection in your own workspace.\n\n``` markdown\n[![Run in Postman](https://run.pstmn.io/button.svg)](https://god.gw.postman.com/run-collection/:collection-id)\n\n ```\n\nReplace `:collection-id` with the actual collection identifier when you publish this button externally.\n\n### Documentation & How to Use This Collection\n\n- Start with the **books** endpoints to understand available data.\n    \n- Use the **orders** endpoints to walk through a full workflow: select a book → submit an order → verify/order status → (optionally) update the order.\n    \n- You can run the entire collection or folders using the **Collection Runner** to validate flows end to end.\n    \n- Add examples to requests (e.g., success and error responses) to power mock servers and richer documentation.\n    \n\nFor more detailed guidance, open individual requests in this collection to see their descriptions, parameters, and sample payloads.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "38826294"
+	},
+	"item": [
+		{
+			"name": "Create Barer Token",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"var random=Math.random().toString(36).substring(2);\r",
+							"var userEmail=\"Pavan\"+random+\"@gmail.com\";\r",
+							"pm.collectionVariables.set(\"userEmail\", userEmail);"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set(\"access-token\",pm.response.json().accessToken);"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \r\n\"clientName\": \"Pavan\", \r\n\"clientEmail\": \"{{userEmail}}\" \r\n}   ",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/api-clients/",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api-clients",
+						""
+					]
+				},
+				"description": "This request generates an authentication **bearer token** used to authorize subsequent API requests. It requires valid user or client credentials (provided in the request body or in the Authorization tab).And the clientEmail should be unique for each request. On success, the response returns the bearer token and (usually) its expiry time. Store this token (for example, in an environment variable like `{{authToken}}`) and reuse it in the `Authorization: Bearer {{authToken}}` header for other secured endpoints until it expires."
+			},
+			"response": []
+		},
+		{
+			"name": "Check API Status",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response Status Code 200\",()=>\r",
+							"{\r",
+							"    pm.response.to.have.status(200);\r",
+							"})\r",
+							"pm.test(\"Response json has Status OK\",()=>\r",
+							"{\r",
+							"  pm.expect( pm.response.json().status).to.eql(\"OK\") ;\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Response time is less than 500ms\",()=>\r",
+							"{\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(500);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/status",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"status"
+					]
+				},
+				"description": "This request checks the health of the API/server to ensure it is up and responding correctly. It typically returns a simple status payload (for example, a `status` or `message` field) indicating that the service is running. Use this request for monitoring or quick connectivity checks before running other API requests or automated test suites."
+			},
+			"response": []
+		},
+		{
+			"name": "List Books",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData=pm.response.json();",
+							"const schema={",
+							"  \"$schema\": \"http://json-schema.org/draft-07/schema#\",",
+							"  \"title\": \"BookList\",",
+							"  \"description\": \"A list of book records\",",
+							"  \"type\": \"array\",",
+							"  \"items\": {",
+							"    \"type\": \"object\",",
+							"    \"required\": [\"id\", \"name\", \"type\", \"available\"],",
+							"    \"properties\": {",
+							"      \"id\": {",
+							"        \"type\": \"integer\",",
+							"        \"minimum\": 1",
+							"      },",
+							"      \"name\": {",
+							"        \"type\": \"string\"",
+							"      },",
+							"      \"type\": {",
+							"        \"type\": \"string\",",
+							"        \"enum\": [\"fiction\", \"non-fiction\", \"biography\"]",
+							"      },",
+							"      \"available\": {",
+							"        \"type\": \"boolean\"",
+							"      }",
+							"    },",
+							"    \"additionalProperties\": false",
+							"  }",
+							"};",
+							"",
+							"",
+							"pm.test(\"Status code is 200\",()=>",
+							"{",
+							"    pm.response.to.have.status(200);",
+							"})",
+							"",
+							"",
+							"pm.test(\"Book List Have Expected Number of Books\",()=>",
+							"{",
+							"    let num= parseInt(pm.iterationData.get(\"limit\"));",
+							"    pm.expect(jsonData.length).to.eql(num);",
+							"})",
+							"",
+							"pm.test(\"Response is Array\",()=>",
+							"{",
+							"pm.expect(Array.isArray(jsonData)).to.be.true;",
+							"})",
+							"",
+							"pm.test(\"Schema Validation\",()=>",
+							"{",
+							"    pm.response.to.have.jsonSchema(schema);",
+							"})",
+							"",
+							"pm.test(\"Response time is less than 500ms\",()=>",
+							"{",
+							"    pm.expect(pm.response.responseTime).to.be.below(500);",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/books?limit={{limit}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"books"
+					],
+					"query": [
+						{
+							"key": "limit",
+							"value": "{{limit}}",
+							"description": "between 1 & 6"
+						}
+					]
+				},
+				"description": "This request retrieves a list of all available books from the API. It returns an array of book objects, typically including fields such as `id`, `title`, `author`, `bookType`, and availability information. Use this endpoint to display or browse the catalog of books, or as a starting point for selecting a specific book for further operations."
+			},
+			"response": []
+		},
+		{
+			"name": "List Books Based on BookType",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData=pm.response.json();\r",
+							"const schema = {\r",
+							"  \"$schema\": \"http://json-schema.org/draft-07/schema#\",\r",
+							"  \"title\": \"BooksResponse\",\r",
+							"  \"description\": \"List of books\",\r",
+							"  \"type\": \"array\",\r",
+							"  \"items\": {\r",
+							"    \"type\": \"object\",\r",
+							"    \"required\": [\"id\", \"name\", \"type\", \"available\"],\r",
+							"    \"properties\": {\r",
+							"      \"id\": {\r",
+							"        \"type\": \"integer\",\r",
+							"        \"minimum\": 1\r",
+							"      },\r",
+							"      \"name\": {\r",
+							"        \"type\": \"string\",\r",
+							"        \"minLength\": 1\r",
+							"      },\r",
+							"      \"type\": {\r",
+							"        \"type\": \"string\",\r",
+							"        \"minLength\": 1\r",
+							"      },\r",
+							"      \"available\": {\r",
+							"        \"type\": \"boolean\"\r",
+							"      }\r",
+							"    },\r",
+							"    \"additionalProperties\": false\r",
+							"  }\r",
+							"};\r",
+							"\r",
+							"\r",
+							"pm.test(\"Status code is 200\",()=>\r",
+							"{\r",
+							"    pm.response.to.have.status(200);\r",
+							"})\r",
+							"\r",
+							"\r",
+							"\r",
+							"pm.test(\"Book List Have Expected Book Type\",()=>\r",
+							"{\r",
+							"    for(var i=0;i<jsonData.length;i++){\r",
+							"    pm.expect(jsonData[i].type).to.eql(pm.iterationData.get(\"type\"));\r",
+							"    }\r",
+							"}\r",
+							")\r",
+							"\r",
+							"\r",
+							"pm.test(\"Response Body is Array\",()=>\r",
+							"{\r",
+							"    pm.expect(Array.isArray(jsonData)).to.be.true;\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Validate Json Schema\",()=>\r",
+							"{\r",
+							"    pm.response.to.have.jsonSchema(schema);\r",
+							"})\r",
+							"pm.test(\"Response time is less than 500ms\",()=>\r",
+							"{\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(500);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/books?type={{type}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"books"
+					],
+					"query": [
+						{
+							"key": "type",
+							"value": "{{type}}",
+							"description": "fiction/non-fiction"
+						}
+					]
+				},
+				"description": "This request retrieves a list of books filtered by a specific `bookType`. It returns an array of book objects that match the provided type (for example, fiction, non-fiction, programming, etc.). Use this endpoint when you need to browse or display books of a particular category or type."
+			},
+			"response": []
+		},
+		{
+			"name": "Get Single Book",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData=pm.response.json();\r",
+							"const schema={\r",
+							"  \"$schema\": \"http://json-schema.org/draft-07/schema#\",\r",
+							"  \"title\": \"BookResponse\",\r",
+							"  \"type\": \"object\",\r",
+							"  \"required\": [\r",
+							"    \"id\",\r",
+							"    \"entityType\",\r",
+							"    \"available\",\r",
+							"    \"timestamp\",\r",
+							"    \"created\",\r",
+							"    \"isbn\",\r",
+							"    \"GSI1SK\",\r",
+							"    \"name\",\r",
+							"    \"current-stock\",\r",
+							"    \"GSI1PK\",\r",
+							"    \"price\",\r",
+							"    \"PK\",\r",
+							"    \"author\",\r",
+							"    \"type\",\r",
+							"    \"SK\"\r",
+							"  ],\r",
+							"  \"properties\": {\r",
+							"    \"id\": {\r",
+							"      \"type\": \"integer\",\r",
+							"      \"minimum\": 1\r",
+							"    },\r",
+							"    \"entityType\": {\r",
+							"      \"type\": \"string\",\r",
+							"      \"enum\": [\"BOOK\"]\r",
+							"    },\r",
+							"    \"available\": {\r",
+							"      \"type\": \"boolean\"\r",
+							"    },\r",
+							"    \"timestamp\": {\r",
+							"      \"type\": \"integer\"\r",
+							"    },\r",
+							"    \"created\": {\r",
+							"      \"type\": \"string\",\r",
+							"      \"format\": \"date-time\"\r",
+							"    },\r",
+							"    \"isbn\": {\r",
+							"      \"type\": \"string\",\r",
+							"      \"minLength\": 1\r",
+							"    },\r",
+							"    \"GSI1SK\": {\r",
+							"      \"type\": \"string\",\r",
+							"      \"minLength\": 1\r",
+							"    },\r",
+							"    \"name\": {\r",
+							"      \"type\": \"string\",\r",
+							"      \"minLength\": 1\r",
+							"    },\r",
+							"    \"current-stock\": {\r",
+							"      \"type\": \"integer\",\r",
+							"      \"minimum\": 0\r",
+							"    },\r",
+							"    \"GSI1PK\": {\r",
+							"      \"type\": \"string\",\r",
+							"      \"minLength\": 1\r",
+							"    },\r",
+							"    \"price\": {\r",
+							"      \"type\": \"number\",\r",
+							"      \"minimum\": 0\r",
+							"    },\r",
+							"    \"PK\": {\r",
+							"      \"type\": \"string\",\r",
+							"      \"minLength\": 1\r",
+							"    },\r",
+							"    \"author\": {\r",
+							"      \"type\": \"string\",\r",
+							"      \"minLength\": 1\r",
+							"    },\r",
+							"    \"type\": {\r",
+							"      \"type\": \"string\",\r",
+							"      \"minLength\": 1\r",
+							"    },\r",
+							"    \"SK\": {\r",
+							"      \"type\": \"string\",\r",
+							"      \"minLength\": 1\r",
+							"    }\r",
+							"  },\r",
+							"  \"additionalProperties\": false\r",
+							"};\r",
+							"\r",
+							"pm.test(\"Status code is 200\",()=>{\r",
+							"    pm.response.to.have.status(200);\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Response retrive requested book\",()=>\r",
+							"{\r",
+							"    let id_no=parseInt(pm.iterationData.get(\"BookId\"))\r",
+							"    pm.expect(jsonData.id).to.eql(id_no);\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Validate Json Schema\",()=>{\r",
+							"\r",
+							"pm.response.to.have.jsonSchema(schema);\r",
+							"\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Response time is less than 500ms\",()=>\r",
+							"{\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(500);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/books/{{BookId}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"books",
+						"{{BookId}}"
+					]
+				},
+				"description": "This request retrieves the details of a single book identified by its unique ID (usually passed as a path parameter). It returns a book object with fields such as `id`, `title`, `author`, `bookType`, and availability or pricing information. Use this endpoint when you need detailed information about one specific book."
+			},
+			"response": []
+		},
+		{
+			"name": "Submit an Order",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData=pm.response.json();\r",
+							"\r",
+							"pm.collectionVariables.set(\"order_Id\",jsonData.orderId);\r",
+							"\r",
+							"pm.test(\"Response Status Code 201\",()=>{\r",
+							"    pm.response.to.have.status(201);\r",
+							"    pm.response.to.have.status(\"Created\");\r",
+							"\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Response Status String 'Created'\",()=>{\r",
+							"    \r",
+							"    pm.response.to.have.status(\"Created\");\r",
+							"\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Order Created Successfuly\",()=>{\r",
+							"    pm.expect(jsonData.created).to.be.true;\r",
+							"    pm.expect(jsonData.orderId).to.not.be.null;\r",
+							"    pm.expect(jsonData.orderId).to.not.be.empty;\r",
+							"    pm.expect(jsonData.orderId).to.match(/[a-zA-Z0-9_-]+/);\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Response time is less than 500ms\",()=>\r",
+							"{\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(500);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access-token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": " { \r\n\"bookId\": {{BookId}}, \r\n\"customerName\": \"John\"\r\n \r\n}\r\n\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/orders",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"orders"
+					]
+				},
+				"description": "This request creates a new order for one book. The request body typically includes the selected book ID and customer name . On success, the API returns the newly created order, including its unique `orderId` and status. Use this endpoint to place an order in the system."
+			},
+			"response": []
+		},
+		{
+			"name": "Get All Orders",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response time is less than 1000ms\",()=>\r",
+							"{\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(1000);\r",
+							"})\r",
+							"pm.test(\"Status Code 200 & Status string OK\",()=>{\r",
+							"    pm.response.to.have.status(200);\r",
+							"    pm.response.to.have.status(\"OK\");\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Response Content-Type is application/json\",()=>{\r",
+							"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.be.eql(\"application/json\");\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access-token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/orders",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"orders"
+					]
+				},
+				"description": "This request retrieves a list of all existing orders for the current user (or for the system, depending on your API design). It returns an array of order objects containing details such as `orderId`, BookId,Customer name, quantity, and timestamps. Use this endpoint to view order history or to verify that an order was created successfully."
+			},
+			"response": []
+		},
+		{
+			"name": "Get A Single 0rder",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData= pm.response.json();\r",
+							"\r",
+							"pm.test(\"Status Code 200 & Status string OK\",()=>{\r",
+							"    pm.response.to.have.status(200);\r",
+							"    pm.response.to.have.status(\"OK\");\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Response time is less than 500ms\",()=>\r",
+							"{\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(500);\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Order Id matches expected value\",()=>\r",
+							"{\r",
+							"  pm.expect(jsonData.id).to.be.eql(pm.collectionVariables.get(\"order_Id\"));\r",
+							"})\r",
+							"\r",
+							"pm.test(\"BookId matches expected value\",()=>{\r",
+							"    let num=parseInt(pm.iterationData.get(\"BookId\"))\r",
+							"    pm.expect(jsonData.bookId).to.equal(num);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access-token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/orders/{{order_Id}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"orders",
+						"{{order_Id}}"
+					]
+				},
+				"description": "This request retrieves the details of a single order identified by its unique `orderId` (usually passed as a path parameter). It returns an order object with information about the ordered item, quantities, BookId,orderid,Customer name and timestamps. Use this endpoint to check the status or contents of a specific order."
+			},
+			"response": []
+		},
+		{
+			"name": "Update an Order",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response time less than 500ms\",()=>\r",
+							"{\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(500);\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Staus code 204\",()=>{\r",
+							"    pm.response.to.have.status(204);\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Response data size 746B\",()=>\r",
+							"{\r",
+							"    pm.expect(Number(pm.response.size().total)).to.equal(746);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access-token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \r\n\"customerName\": \"Issac\" \r\n}  ",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/orders/{{order_Id}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"orders",
+						"{{order_Id}}"
+					]
+				},
+				"description": "This request updates an existing order identified by its `orderId`. The request body typically includes the fields that can be modified, such as item Customer name. On success, it returns the updated order object. Use this endpoint to adjust an order after it has been created (for example, before it is shipped)."
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Order",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response time less than 500ms\",()=>\r",
+							"{\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(500);\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Staus code 204\",()=>{\r",
+							"    pm.response.to.have.status(204);\r",
+							"})\r",
+							"\r",
+							"pm.test(\"Response data size 746B\",()=>\r",
+							"{\r",
+							"    pm.expect(Number(pm.response.size().total)).to.equal(746);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access-token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/orders/{{order_Id}}",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"orders",
+						"{{order_Id}}"
+					]
+				},
+				"description": "This request deletes an existing order identified by its `orderId`. On success, the API usually returns a confirmation message or an empty response with a success status code (e.g., 204 No Content). Use this endpoint to cancel or remove an order from the system, subject to any business rules that restrict deletion (for example, only orders in certain statuses may be deleted)."
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "access-token",
+			"value": ""
+		},
+		{
+			"key": "userEmail",
+			"value": ""
+		},
+		{
+			"key": "order_Id",
+			"value": ""
+		},
+		{
+			"key": "type",
+			"value": ""
+		},
+		{
+			"key": "limit",
+			"value": ""
+		},
+		{
+			"key": "BookId",
+			"value": ""
+		}
+	]
+}
